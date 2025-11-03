@@ -2,20 +2,25 @@ import os
 import glob
 
 from image import mat_to_jpg
+from label import mat_to_yolo_label
 
 if __name__ == '__main__':
     # Set your input and output paths
     input_folders = ['../dataset/brainTumorDataPublic_1-766', '../dataset/brainTumorDataPublic_767-1532', '../dataset/brainTumorDataPublic_1533-2298', '../dataset/brainTumorDataPublic_2299-3064']
-    output_folder = '../output/images/'
+    output_folder_images = '../output/images/'
+    output_folder_labels = '../output/labels/'
     
     # Create output folder if it doesn't exist
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+    if not os.path.exists(output_folder_images):
+        os.makedirs(output_folder_images)
+    if not os.path.exists(output_folder_labels):
+        os.makedirs(output_folder_labels)
     
     for input_folder in input_folders:
         # Get list of all .mat files in input folder
         file_list = glob.glob(os.path.join(input_folder, '*.mat'))
         
         for file_path in file_list:
-            mat_to_jpg(file_path, output_folder)
+            mat_to_jpg(file_path, output_folder_images)
+            mat_to_yolo_label(file_path, output_folder_labels)
     print('Processing complete!')
