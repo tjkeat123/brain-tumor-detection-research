@@ -23,9 +23,6 @@ def mat_to_jpg(file_path, output_folder):
         # Image is stored directly as a 512x512 array
         im1 = np.array(cjdata['image'], dtype=np.float64)
         
-        # Label is stored as a 1x1 array
-        label = int(cjdata['label'][0, 0])
-        
         # Normalize image to 0-255 range
         min1 = im1.min()
         max1 = im1.max()
@@ -35,17 +32,12 @@ def mat_to_jpg(file_path, output_folder):
         img = Image.fromarray(im)
         img = img.resize((224, 224), Image.LANCZOS)
         
-        # Create label folder if it doesn't exist
-        label_folder = os.path.join(output_folder, str(label))
-        if not os.path.exists(label_folder):
-            os.makedirs(label_folder)
-        
         # Get base filename without extension
         file_name = os.path.basename(file_path)
         file_name_base = os.path.splitext(file_name)[0]
         
-        # Save image as JPEG
-        output_file_path = os.path.join(label_folder, f'{file_name_base}.jpg')
+        # Save image as JPEG directly in output folder
+        output_file_path = os.path.join(output_folder, f'{file_name_base}.jpg')
         img.save(output_file_path)
         
         print(f'Processed: {file_name} -> {output_file_path}')
