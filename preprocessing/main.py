@@ -3,6 +3,7 @@ import glob
 
 from image import mat_to_jpg
 from label import mat_to_yolo_label
+from split import split_data
 
 if __name__ == '__main__':
     # Set your input and output paths
@@ -24,3 +25,8 @@ if __name__ == '__main__':
             mat_to_jpg(file_path, output_folder_images)
             mat_to_yolo_label(file_path, output_folder_labels)
     print('Processing complete!')
+
+    # Split the data into train/val/test sets
+    print('\nSplitting data into train/val/test sets...')
+    split_data(output_folder_images, output_folder_labels, '../output/btf/', 
+               train_ratio=0.7, val_ratio=0.1)  # 70% train, 10% val, 20% test
