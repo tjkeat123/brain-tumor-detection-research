@@ -35,18 +35,11 @@ def mat_to_yolo_label(file_path, output_folder):
         y_min = y_coords.min()
         y_max = y_coords.max()
         
-        # Scale coordinates from 512x512 to 224x224
-        scale_factor = 224.0 / 512.0
-        x_min_scaled = x_min * scale_factor
-        x_max_scaled = x_max * scale_factor
-        y_min_scaled = y_min * scale_factor
-        y_max_scaled = y_max * scale_factor
-        
-        # Convert to YOLO format (normalized to 0-1)
-        x_center = (x_min_scaled + x_max_scaled) / 2.0 / 224.0
-        y_center = (y_min_scaled + y_max_scaled) / 2.0 / 224.0
-        width = (x_max_scaled - x_min_scaled) / 224.0
-        height = (y_max_scaled - y_min_scaled) / 224.0
+        # Convert to YOLO format (normalized to 0-1) using original 512x512 dimensions
+        x_center = (x_min + x_max) / 2.0 / 512.0
+        y_center = (y_min + y_max) / 2.0 / 512.0
+        width = (x_max - x_min) / 512.0
+        height = (y_max - y_min) / 512.0
         
         # Get base filename without extension
         file_name = os.path.basename(file_path)

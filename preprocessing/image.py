@@ -28,9 +28,8 @@ def mat_to_jpg(file_path, output_folder):
         max1 = im1.max()
         im = np.uint8(255 / (max1 - min1) * (im1 - min1))
         
-        # Convert to PIL Image and resize to 224x224
+        # Convert to PIL Image
         img = Image.fromarray(im)
-        img = img.resize((224, 224), Image.LANCZOS)
         
         # Get base filename without extension
         file_name = os.path.basename(file_path)
