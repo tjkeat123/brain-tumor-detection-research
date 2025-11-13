@@ -6,15 +6,16 @@ import shutil
 
 def split_data(image_path, label_path, output_path, train_ratio=0.7, val_ratio=0.1):
     """
-    Split the data into train, val, and test sets while keeping images and labels together.
+    Split the data into train, val, and test sets by patient ID.
+    All images from the same patient stay together in the same split.
     
     Args:
-        image_path: Path to folder containing images
-        label_path: Path to folder containing labels
+        image_path: Path to folder containing patient ID subfolders with images
+        label_path: Path to folder containing patient ID subfolders with labels
         output_path: Path where split folders will be created
-        train_ratio: Proportion of data for training (default 0.7)
-        val_ratio: Proportion of data for validation (default 0.2)
-        test_ratio: Remainder goes to test (default 0.1)
+        train_ratio: Proportion of patients for training (default 0.7)
+        val_ratio: Proportion of patients for validation (default 0.1)
+        test_ratio: Remainder goes to test (default 0.2)
     """
     
     # Create output directories
@@ -22,51 +23,59 @@ def split_data(image_path, label_path, output_path, train_ratio=0.7, val_ratio=0
         os.makedirs(os.path.join(output_path, split, 'images'), exist_ok=True)
         os.makedirs(os.path.join(output_path, split, 'labels'), exist_ok=True)
     
-    # Get all image files and sort them for consistency
-    image_files = sorted(glob.glob(os.path.join(image_path, '*.jpg')))
+    # Get all patient ID folders
+    patient_folders = [d for d in os.listdir(image_path) 
+                      if os.path.isdir(os.path.join(image_path, d))]
+    patient_ids = sorted(patient_folders)
     
-    # Get base filenames (without extension and path)
-    base_names = [os.path.splitext(os.path.basename(f))[0] for f in image_files]
-    
-    # Shuffle the data with a fixed seed for reproducibility
+    # Shuffle patient IDs with a fixed seed for reproducibility
     np.random.seed(42)
-    indices = np.random.permutation(len(base_names))
+    shuffled_patients = np.random.permutation(patient_ids)
     
-    # Calculate split points
-    n_total = len(base_names)
-    n_train = int(n_total * train_ratio)
-    n_val = int(n_total * val_ratio)
+    # Calculate split points based on number of patients
+    n_patients = len(patient_ids)
+    n_train = int(n_patients * train_ratio)
+    n_val = int(n_patients * val_ratio)
     
-    # Split indices
-    train_indices = indices[:n_train]
-    val_indices = indices[n_train:n_train + n_val]
-    test_indices = indices[n_train + n_val:]
+    # Split patient IDs
+    train_patients = shuffled_patients[:n_train]
+    val_patients = shuffled_patients[n_train:n_train + n_val]
+    test_patients = shuffled_patients[n_train + n_val:]
     
-    # Function to copy files to split folders
-    def copy_split(split_indices, split_name):
-        for idx in split_indices:
-            base_name = base_names[idx]
+    # Function to copy all files from patients to split folders
+    def copy_split(patient_list, split_name):
+        total_images = 0
+        for patient_id in patient_list:
+            # Get all images for this patient
+            patient_image_folder = os.path.join(image_path, patient_id)
+            image_files = glob.glob(os.path.join(patient_image_folder, '*.jpg'))
             
-            # Copy image
-            src_image = os.path.join(image_path, f'{base_name}.jpg')
-            dst_image = os.path.join(output_path, split_name, 'images', f'{base_name}.jpg')
-            shutil.copy2(src_image, dst_image)
-            
-            # Copy label
-            src_label = os.path.join(label_path, f'{base_name}.txt')
-            dst_label = os.path.join(output_path, split_name, 'labels', f'{base_name}.txt')
-            if os.path.exists(src_label):
-                shutil.copy2(src_label, dst_label)
-            else:
-                print(f'Warning: Label file not found for {base_name}')
+            for image_file in image_files:
+                base_name = os.path.splitext(os.path.basename(image_file))[0]
+                
+                # Copy image
+                dst_image = os.path.join(output_path, split_name, 'images', f'{base_name}.jpg')
+                shutil.copy2(image_file, dst_image)
+                
+                # Copy corresponding label
+                src_label = os.path.join(label_path, patient_id, f'{base_name}.txt')
+                dst_label = os.path.join(output_path, split_name, 'labels', f'{base_name}.txt')
+                if os.path.exists(src_label):
+                    shutil.copy2(src_label, dst_label)
+                else:
+                    print(f'Warning: Label file not found for patient {patient_id}, image {base_name}')
+                
+                total_images += 1
+        
+        return total_images
     
     # Copy files to respective splits
-    copy_split(train_indices, 'train')
-    copy_split(val_indices, 'val')
-    copy_split(test_indices, 'test')
+    train_count = copy_split(train_patients, 'train')
+    val_count = copy_split(val_patients, 'val')
+    test_count = copy_split(test_patients, 'test')
     
-    print(f'Split complete:')
-    print(f'  Train: {len(train_indices)} samples')
-    print(f'  Val: {len(val_indices)} samples')
-    print(f'  Test: {len(test_indices)} samples')
-    print(f'  Total: {n_total} samples')
+    print(f'Split complete (by patient ID):')
+    print(f'  Train: {len(train_patients)} patients ({train_count} images)')
+    print(f'  Val: {len(val_patients)} patients ({val_count} images)')
+    print(f'  Test: {len(test_patients)} patients ({test_count} images)')
+    print(f'  Total: {n_patients} patients ({train_count + val_count + test_count} images)')

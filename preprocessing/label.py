@@ -6,7 +6,7 @@ import os
 def mat_to_yolo_label(file_path, output_folder):
     """
     Extract bounding box from .mat file using tumorBorder coordinates.
-    Writes YOLO format annotation to .txt file.
+    Writes YOLO format annotation to .txt file organized by patient ID.
     
     Args:
         file_path: Path to .mat file
@@ -15,6 +15,10 @@ def mat_to_yolo_label(file_path, output_folder):
     # Load .mat file (MATLAB v7.3 uses HDF5 format)
     with h5py.File(file_path, 'r') as mat_data:
         cjdata = mat_data['cjdata']
+        
+        # Extract patient ID (stored as ASCII codes)
+        pid_array = np.array(cjdata['PID']).flatten()
+        pid = ''.join(chr(x) for x in pid_array)
         
         # Extract label (class index)
         # YOLO uses 0-indexed classes, so subtract 1 from label (1,2,3 -> 0,1,2)
@@ -45,8 +49,13 @@ def mat_to_yolo_label(file_path, output_folder):
         file_name = os.path.basename(file_path)
         file_name_base = os.path.splitext(file_name)[0]
         
-        # Create output txt file path
-        txt_file_path = os.path.join(output_folder, f'{file_name_base}.txt')
+        # Create patient-specific folder
+        patient_folder = os.path.join(output_folder, str(pid))
+        if not os.path.exists(patient_folder):
+            os.makedirs(patient_folder)
+        
+        # Create output txt file path in patient folder with original filename
+        txt_file_path = os.path.join(patient_folder, f'{file_name_base}.txt')
         
         # Write YOLO format: class_index x_center y_center width height
         with open(txt_file_path, 'w') as f:
